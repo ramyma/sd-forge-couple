@@ -1,5 +1,6 @@
 from modules import scripts
 import re
+from fastapi.exceptions import HTTPException
 
 from scripts.couple_mapping import (
     empty_tensor,
@@ -71,31 +72,24 @@ class ForgeCouple(scripts.Script):
             couples.append(prompt)
 
         if (mode == "Basic") and len(couples) < (3 if background != "None" else 2):
-            print(
-                f"\n\n[Couple] Not Enough Lines in Prompt...\nCurrent: {len(couples)} / Required: {3 if background != 'None' else 2}\n\n"
-            )
+            raise HTTPException(status_code=422, detail=f"[Couple] Not Enough Lines in Prompt...\nCurrent: {len(couples)} / Required: {3 if background != 'None' else 2}")
         if mode == "Mask":
             if not mapping or len(mapping) != len(couples) - (
                 1 if background != "None" else 0
             ):
-                print("\n\n[Couple] Number of Couples and Masks is not the same...\n\n")
                 self.couples = None
-                return
+                raise HTTPException(status_code=422, detail="[Couple] Number of Couples and Masks is not the same")
         elif len(couples) < (3 if background != "None" else 2):
-            print("\n\n[Couple] Not Enough Lines in Prompt...\n\n")
             self.couples = None
-            return
+            raise HTTPException(status_code=422, detail="[Couple] Not Enough Lines in Prompt")
 
         if (mode == "Advanced") and not validata_mapping(mapping):
             self.couples = None
             return
 
         if (mode == "Advanced") and (len(couples) != len(parse_mapping(mapping))):
-            print(
-                f"\n\n[Couple] Number of Couples and Mapping is not the same...\nCurrent: {len(couples)} / Required: {len(parse_mapping(mapping))}\n\n"
-            )
             self.couples = None
-            return
+            raise HTTPException(status_code=422, detail=f"[Couple] Number of Couples and Mapping is not the same...\nCurrent: {len(couples)} / Required: {len(parse_mapping(mapping))}")
 
         self.couples = couples
 
